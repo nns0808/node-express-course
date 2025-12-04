@@ -1,0 +1,63 @@
+<!-- <!DOCTYPE html>
+
+<html>
+  <head>
+    <title>My First Page</title>
+  </head>
+  <body>
+    <h1>Hello everyone!</h1>
+    <p>This is my first page.</p>
+  </body>
+</html> -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Products Fetch</title>
+</head>
+<body>
+  <h1>Products List</h1>
+
+  <button id="loadProductsBtn">Load Products</button>
+
+  <div id="productsContainer" style="margin-top:20px;"></div>
+
+  <script>
+
+    // JavaScript inside index.html
+
+    const button = document.getElementById('loadProductsBtn');
+    const container = document.getElementById('productsContainer');
+
+    button.addEventListener('click', () => {
+      fetch('/api/v1/products')
+        .then((res) => res.json())
+        .then((data) => {
+          
+          container.innerHTML = '';
+
+          if (data.length === 0) {
+            container.textContent = 'No products found.';
+            return;
+          }
+
+          // List to show products
+          const ul = document.createElement('ul');
+
+          data.forEach(product => {
+            const li = document.createElement('li');
+            li.textContent = `${product.name} - $${product.price.toFixed(2)}`;
+            ul.appendChild(li);
+          });
+
+          container.appendChild(ul);
+        })
+        .catch((err) => {
+          container.textContent = 'Error loading products.';
+          console.error(err);
+        });
+    });
+  </script>
+</body>
+</html>
