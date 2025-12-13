@@ -2,10 +2,46 @@ console.log('Express Tutorial')
 
 const express = require("express");
 const app = express();
-const { products } = require("./data");
+const { products, people } = require("./data");
+const peopleRouter = require("./routes/people");
+const cookieParser = require("cookie-parser");
+const auth = (req, res, next) => {
+  const { name } = req.cookies;
+
+  if (name) {
+    req.user = name;
+    next();
+  } else {
+    res.status(401).json({ message: "unauthorized" });
+  }
+};
+
 const port = 3000;
 
+const logger = (req, res, next) => {
+  const time = new Date().toLocaleString();
+  console.log(`${req.method} ${req.url} — ${time}`);
+  next();
+};
+app.use(logger);
 app.use(express.static("./public"));
+app.use(express.urlencoded({ extended: false }));
+app.use(express.json());
+app.use(cookieParser());
+
+app.use("/api/v1/people", peopleRouter);
+
+
+
+// Example of using logger for a single route:
+// app.get("/", logger, (req, res) => {
+//   res.send("Home Page");
+// });
+
+app.get("/", (req, res) => {
+  res.send("Home Page");
+});
+
 
 
 app.get("/api/v1/test", (req, res) => {
@@ -15,6 +51,7 @@ app.get("/api/v1/test", (req, res) => {
 app.get("/api/v1/products", (req, res) => {
   res.json(products);
 });
+
 
 app.get("/api/v1/query", (req, res) => {
   let { search, limit, regex, maxPrice } = req.query;
@@ -31,7 +68,9 @@ app.get("/api/v1/query", (req, res) => {
   if (regex) {
     try {
       const re = new RegExp(regex, "i");
-      filteredProducts = filteredProducts.filter((product) => re.test(product.name));
+      filteredProducts = filteredProducts.filter((product) => 
+        re.test(product.name)
+      );
     } catch (err) {
       return res.status(400).json({ message: "Invalid regular expression" });
     }
@@ -41,7 +80,9 @@ app.get("/api/v1/query", (req, res) => {
   if (maxPrice) {
     const max = parseFloat(maxPrice);
     if (!isNaN(max)) {
-      filteredProducts = filteredProducts.filter((product) => product.price <= max);
+      filteredProducts = filteredProducts.filter(
+        (product) => product.price <= max
+      );
     }
   }
 
@@ -56,30 +97,7 @@ app.get("/api/v1/query", (req, res) => {
   res.json(filteredProducts);
 });
 
-// app.get("/api/v1/products/:productID", (req, res) => {
-//   res.json(req.params);
-// });
-
-// Searching and limiting products using query params
-app.get("/api/v1/query", (req, res) => {
-  let { search, limit } = req.query;
-  let filteredProducts = [...products];
-
-  if (search) {
-    filteredProducts = filteredProducts.filter((product) =>
-      product.name.toLowerCase().startsWith(search.toLowerCase())
-    );
-  }
-
-  if (limit) {
-    limit = parseInt(limit);
-    filteredProducts = filteredProducts.slice(0, limit);
-  }
-
-  res.json(filteredProducts);
-});
-
-
+// Product by ID
 app.get("/api/v1/products/:productID", (req, res) => {
   const idToFind = parseInt(req.params.productID);
 
@@ -93,6 +111,64 @@ app.get("/api/v1/products/:productID", (req, res) => {
 });
 
 
+// cookie
+app.get("/setcookie", (req, res) => {
+  res.cookie("name", "Natalia", { httpOnly: true });
+  res.send("Cookie has been set");
+});
+
+app.get("/getcookie", (req, res) => {
+  res.json({ cookies: req.cookies });
+});
+
+
+// app.get("/api/v1/people", (req, res) => {
+//   res.json({ success: true, data: people });
+// });
+
+
+// app.post("/api/v1/people", (req, res) => {
+//   const { name } = req.body;
+
+//   if (!name) {
+//     return res.status(400).json({
+//       success: false,
+//       message: "Please provide a name",
+//     });
+//   }
+// // add new person
+//   people.push({ id: people.length + 1, name });
+
+//   res.status(201).json({
+//     success: true,
+//     name: name,
+//   });
+// });
+
+app.post("/logon", (req, res) => {
+  const { name } = req.body;
+
+  if (!name) {
+    return res.status(400).json({ message: "Please provide a name" });
+  }
+
+  res.cookie("name", name, { httpOnly: true, maxAge: 1000 * 60 * 60 }); // 1 hour cookie
+  res.status(201).json({ message: `Hello, ${name}!` });
+});
+
+
+app.delete("/logoff", (req, res) => {
+  res.clearCookie("name");
+  res.status(200).json({ message: "You are logged off" });
+});
+
+
+app.get("/test", auth, (req, res) => {
+  res.status(200).json({ message: `Welcome, ${req.user}!` });
+});
+
+
+// Not found
 app.all("*", (req, res) => {
   res.status(404).send("Not found");
 });
@@ -100,3 +176,4 @@ app.all("*", (req, res) => {
 app.listen(port, () => {
   console.log("Express Tutorial");
 });
+
