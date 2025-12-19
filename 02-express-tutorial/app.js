@@ -122,28 +122,7 @@ app.get("/getcookie", (req, res) => {
 });
 
 
-// app.get("/api/v1/people", (req, res) => {
-//   res.json({ success: true, data: people });
-// });
 
-
-// app.post("/api/v1/people", (req, res) => {
-//   const { name } = req.body;
-
-//   if (!name) {
-//     return res.status(400).json({
-//       success: false,
-//       message: "Please provide a name",
-//     });
-//   }
-// // add new person
-//   people.push({ id: people.length + 1, name });
-
-//   res.status(201).json({
-//     success: true,
-//     name: name,
-//   });
-// });
 
 app.post("/logon", (req, res) => {
   const { name } = req.body;
