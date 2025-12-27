@@ -1,4 +1,5 @@
 const Task = require('../models/Task')
+const mongoose = require('mongoose')
 
 // CREATE
 const createTask = async (req, res) => {
@@ -19,34 +20,62 @@ const getAllTasks = async (req, res) => {
 // READ ONE
 const getTask = async (req, res) => {
   const { id } = req.params
-  const task = await Task.findById(id)
-  if (!task) {
-    return res.status(404).json({ msg: 'Task not found' })
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ msg: 'Invalid task ID' })
   }
-  res.status(200).json(task)
+
+  try {
+    const task = await Task.findById(id)
+    if (!task) {
+      return res.status(404).json({ msg: 'Task not found' })
+    }
+    res.status(200).json(task)
+  } catch (error) {
+    res.status(500).json({ msg: error.message })
+  }
 }
 
 // UPDATE
 const updateTask = async (req, res) => {
   const { id } = req.params
-  const task = await Task.findByIdAndUpdate(id, req.body, {
-    new: true,
-    runValidators: true,
-  })
-  if (!task) {
-    return res.status(404).json({ msg: 'Task not found' })
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ msg: 'Invalid task ID' })
   }
-  res.status(200).json(task)
+
+  try {
+    const task = await Task.findByIdAndUpdate(id, req.body, {
+      new: true,
+      runValidators: true,
+    })
+
+    if (!task) {
+      return res.status(404).json({ msg: 'Task not found' })
+    }
+    res.status(200).json(task)
+  } catch (error) {
+    res.status(500).json({ msg: error.message })
+  }
 }
 
 // DELETE
 const deleteTask = async (req, res) => {
   const { id } = req.params
-  const task = await Task.findByIdAndDelete(id)
-  if (!task) {
-    return res.status(404).json({ msg: 'Task not found' })
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ msg: 'Invalid task ID' })
   }
-  res.status(200).json({ msg: 'Task deleted' })
+
+  try {
+    const task = await Task.findByIdAndDelete(id)
+
+    if (!task) {
+      return res.status(404).json({ msg: 'Task not found' })
+    }
+    res.status(200).json({ msg: 'Task deleted' })
+  } catch (error) {
+    res.status(500).json({ msg: error.message })
+  }
 }
 
 module.exports = {
@@ -56,3 +85,4 @@ module.exports = {
   updateTask,
   deleteTask,
 }
+
