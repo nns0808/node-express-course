@@ -1,82 +1,62 @@
-const Task = require('../models/Task')
-const mongoose = require('mongoose')
-
-// CREATE
-const createTask = async (req, res) => {
-  try {
-    const task = await Task.create(req.body)
-    res.status(201).json(task)
-  } catch (error) {
-    res.status(400).json({ error: error.message })
-  }
-}
+const Task = require('../models/Task');
+const asyncWrapper = require('../middleware/async');
+const { createCustomError } = require('../errors/custom-error');
 
 // READ ALL
-const getAllTasks = async (req, res) => {
-  const tasks = await Task.find({})
-  res.status(200).json(tasks)
-}
+const getAllTasks = asyncWrapper(async (req, res) => {
+  const tasks = await Task.find({});
+  res.status(200).json({ tasks });
+});
+
+// CREATE
+const createTask = asyncWrapper(async (req, res) => {
+  const task = await Task.create(req.body);
+  res.status(201).json({ task });
+});
 
 // READ ONE
-const getTask = async (req, res) => {
-  const { id } = req.params
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    return res.status(400).json({ msg: 'Invalid task ID' })
+const getTask = asyncWrapper(async (req, res, next) => {
+  const { id: taskID } = req.params;
+
+  const task = await Task.findOne({ _id: taskID });
+  if (!task) {
+    return next(createCustomError(`No task with id: ${taskID}`, 404));
   }
 
-  try {
-    const task = await Task.findById(id)
-    if (!task) {
-      return res.status(404).json({ msg: 'Task not found' })
-    }
-    res.status(200).json(task)
-  } catch (error) {
-    res.status(500).json({ msg: error.message })
-  }
-}
-
-// UPDATE
-const updateTask = async (req, res) => {
-  const { id } = req.params
-
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    return res.status(400).json({ msg: 'Invalid task ID' })
-  }
-
-  try {
-    const task = await Task.findByIdAndUpdate(id, req.body, {
-      new: true,
-      runValidators: true,
-    })
-
-    if (!task) {
-      return res.status(404).json({ msg: 'Task not found' })
-    }
-    res.status(200).json(task)
-  } catch (error) {
-    res.status(500).json({ msg: error.message })
-  }
-}
+  res.status(200).json({ task });
+});
 
 // DELETE
-const deleteTask = async (req, res) => {
-  const { id } = req.params
+const deleteTask = asyncWrapper(async (req, res, next) => {
+  const { id: taskID } = req.params;
 
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    return res.status(400).json({ msg: 'Invalid task ID' })
+  const task = await Task.findOneAndDelete({ _id: taskID });
+  if (!task) {
+    return next(createCustomError(`No task with id: ${taskID}`, 404));
   }
 
-  try {
-    const task = await Task.findByIdAndDelete(id)
+  res.status(200).json({ task });
+});
 
-    if (!task) {
-      return res.status(404).json({ msg: 'Task not found' })
+// UPDATE
+const updateTask = asyncWrapper(async (req, res, next) => {
+  const { id: taskID } = req.params;
+
+  const task = await Task.findOneAndUpdate(
+    { _id: taskID },
+    req.body,
+    {
+      new: true,
+      runValidators: true,
     }
-    res.status(200).json({ msg: 'Task deleted' })
-  } catch (error) {
-    res.status(500).json({ msg: error.message })
+  );
+
+  if (!task) {
+    return next(createCustomError(`No task with id: ${taskID}`, 404));
   }
-}
+
+  res.status(200).json({ task });
+});
 
 module.exports = {
   createTask,
@@ -84,5 +64,5 @@ module.exports = {
   getTask,
   updateTask,
   deleteTask,
-}
+};
 
