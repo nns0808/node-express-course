@@ -25,11 +25,11 @@ if (numericFilters) {
     const operatorMap = {
         '>':'$gt',
         '>=':'$gte',
-        '=':'eq',
+        '=':'$eq',
         '<':'$lt',
         '<=':'$lte'
     }
-    const regEx = /\b(<|>|>=|=|<|<=)\b/g
+    const regEx = /\b(>=|<=|>|<|=)\b/g
     let filters = numericFilters.replace(
         regEx,
         (match)=>`-${operatorMap[match]}-`
@@ -53,7 +53,7 @@ if(sort){
     result = result.sort(sortList)
 }
 else{
-    result = result.sort('createAt')
+    result = result.sort('createdAt')
 }
 
 if(fields){
