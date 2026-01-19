@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>JWT Login</title>
+  <link rel="stylesheet" href="styles.css" />
+
+</head>
+<body>
+  <h1>Login</h1>
+  <form id="loginForm">
+    <label>
+      Name: <input type="text" id="name" required />
+    </label><br><br>
+    <label>
+      Password: <input type="password" id="password" required />
+    </label><br><br>
+    <button type="submit">Log In</button>
+  </form>
+
+  <h2>Message from server:</h2>
+  <pre id="message"></pre>
+
+  <script>
+    const loginForm = document.getElementById('loginForm');
+    const messageEl = document.getElementById('message');
+
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const name = document.getElementById('name').value;
+      const password = document.getElementById('password').value;
+
+      try {
+        // 1. Send login POST request
+        const loginResponse = await fetch('/api/v1/logon', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, password })
+        });
+
+        if (!loginResponse.ok) {
+          throw new Error('Login failed');
+        }
+
+        const loginData = await loginResponse.json();
+        const token = loginData.token;
+
+        // 2. Save token to localStorage
+        localStorage.setItem('jwtToken', token);
+
+        // 3. Send GET request with Bearer token
+        const helloResponse = await fetch('/api/v1/hello', {
+          headers: {
+            Authorization: 'Bearer ' + token
+          }
+        });
+
+        if (!helloResponse.ok) {
+          throw new Error('Failed to get hello message');
+        }
+
+        const helloData = await helloResponse.json();
+
+        // 4. Display message
+        messageEl.textContent = helloData.msg;
+
+      } catch (err) {
+        messageEl.textContent = 'Error: ' + err.message;
+      }
+    });
+  </script>
+</body>
+</html>
